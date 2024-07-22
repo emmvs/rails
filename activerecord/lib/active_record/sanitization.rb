@@ -129,12 +129,19 @@ module ActiveRecord
       #
       #   sanitize_sql_like("snake_cased_string", "!")
       #   # => "snake!_cased!_string"
+      #
+      #   sanitize_sql_like("100% true!", "%")
+      #   # => "100\\% true!"
       def sanitize_sql_like(string, escape_character = "\\")
-        if string.include?(escape_character) && escape_character != "%" && escape_character != "_"
-          string = string.gsub(escape_character, '\0\0')
+        unless escape_character.length == 1 && escape_character !~ /[%_]/
+          escape_character = "\\"
         end
 
-        string.gsub(/(?=[%_])/, escape_character)
+        if string.include?(escape_character)
+          string = string.gsub(escape_character, "#{escape_character}#{escape_character}")
+        end
+
+        string.gsub(/([%_])/, "#{escape_character}\\1")
       end
 
       # Accepts an array of conditions. The array has each value
